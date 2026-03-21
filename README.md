@@ -30,8 +30,9 @@ Built for infrastructure operators (port authorities, rail companies, hospitals,
 > **Try it live:** [namazue.dev](https://namazue.dev)
 
 <p align="center">
-  <img src="docs/screenshots/console-mobile.jpg" width="280" alt="Namazue Console — mobile view" />
+  <img src="docs/screenshots/console-impact.jpg" width="100%" alt="Namazue Console — M7.2 earthquake impact propagation with intensity field, bearing lines, and infrastructure exposure" />
 </p>
+<p align="center"><i>M7.2 scenario: intensity field propagation, infrastructure bearing lines, and real-time exposure scoring</i></p>
 
 ## Features
 
