@@ -138,10 +138,14 @@ namazue-console/
 │   ├── globe/                # Spatial console (CF Pages → namazue.dev)
 │   │   └── src/
 │   │       ├── core/         # MapLibre + Deck.gl init, shell, panel system
+│   │       ├── data/         # API clients, stores, real-time data managers
 │   │       ├── engine/       # GMPE, wave propagation, Nankai model
+│   │       ├── i18n/         # Translations (ja, en, ko)
 │   │       ├── layers/       # Plugin data layers (seismic, maritime, lifelines, medical, built-env)
 │   │       ├── ops/          # Operations intelligence (fragility, exposure, priorities)
 │   │       ├── panels/       # Floating panels (22 panels)
+│   │       ├── presentation/ # Operator view rendering components
+│   │       ├── utils/        # Coordinate math, color scales, formatting
 │   │       └── types.ts      # Shared type contract
 │   └── worker/               # API server (CF Workers → api.namazue.dev)
 │       └── src/

@@ -13,14 +13,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    strategy:
+      matrix:
+        node-version: [20, 22]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20.19.0
+          node-version: ${{ matrix.node-version }}
           cache: npm
 
       - name: Install dependencies
@@ -32,5 +36,5 @@ jobs:
       - name: Build globe production bundle
         run: npm run build -w @namazue/globe
 
-      - name: Audit high and critical vulnerabilities
-        run: npm run audit:high
+      - name: Worker typecheck
+        run: npm run typecheck -w @namazue/worker

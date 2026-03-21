@@ -1,5 +1,12 @@
 # Security Policy
 
+## Supported Versions
+
+| Version | Supported |
+|---------|-----------|
+| latest `main` | Yes |
+| older commits | No |
+
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability in Namazue Console, please report it responsibly.

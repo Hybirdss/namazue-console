@@ -18,18 +18,6 @@ This defines the approved product direction:
 - Plugin-based layer architecture
 - Real-time infrastructure: AIS ships, rail, power grid, PLATEAU 3D buildings
 
-## `docs/legacy/`
-
-Archived material from prior product phases.
-
-- `legacy/product-v2/` — Previous "Tokyo-first metro ops console" direction (CesiumJS-based)
-- `legacy/plans/archived-2026-03-06/` — Implementation plans for the previous direction
-- `legacy/STRATEGY.md` — Consumer-first "AI earthquake narrator" direction
-- `legacy/PRD.md`, `legacy/PRD_v2.md` — Earlier PRDs
-- Other legacy design, architecture, and plan documents
-
-Use these only for historical reference. Do not build new work from these.
-
 ## `docs/technical/`
 
 Still valid technical reference:
@@ -45,9 +33,9 @@ Still valid reference material:
 - `reference/HISTORICAL_PRESETS.md` — Historical earthquake presets
 - `reference/JMA_INTENSITY_COLORS.md` — JMA intensity color scale
 
-## `docs/ops/`
+## `docs/screenshots/`
 
-Operational reports and deployment records.
+Screenshots used in the project README.
 
 ## Rule of Thumb
 
