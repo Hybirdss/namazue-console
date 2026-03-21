@@ -189,4 +189,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style, and PR
 
 ## License
 
-[MIT](LICENSE) &copy; 2026 Yunsu Choi
+[MIT](LICENSE) &copy; 2026 Yunsu Kim
