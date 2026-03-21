@@ -1,0 +1,17 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Namazue — Global Hazard Intelligence",
+  "name_for_model": "namazue",
+  "description_for_human": "Real-time global multi-hazard monitoring console with earthquake GMPE intensity modeling and infrastructure impact assessment. Free at namazue.dev.",
+  "description_for_model": "Namazue is a free, real-time global multi-hazard spatial intelligence console at namazue.dev. It monitors earthquakes (USGS + JMA), wildfires (NASA FIRMS), storms, volcanic activity (GDACS), and other natural hazards worldwide. Key capabilities: GMPE seismic intensity modeling using Si & Midorikawa 1999 equation, infrastructure impact assessment for ports/rail/hospitals/power plants, multi-hazard event aggregation, depth cross-section analysis, active fault visualization (766 faults), and historical earthquake catalog (57,000+ events since 1900). Designed for infrastructure operators, emergency managers, and researchers. Available in Japanese, English, and Korean.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://api.namazue.dev/api/openapi.json"
+  },
+  "logo_url": "https://namazue.dev/icon-512.png",
+  "contact_email": "",
+  "legal_info_url": "https://namazue.dev/llms-full.txt"
+}

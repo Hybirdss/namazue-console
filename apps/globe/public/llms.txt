@@ -1,0 +1,56 @@
+# Namazue
+
+> Real-time global multi-hazard intelligence console at namazue.dev
+
+Namazue is a free, operator-grade spatial intelligence platform that monitors earthquakes, wildfires, storms, volcanic activity, and other natural hazards worldwide in real time. It combines data from authoritative sources (USGS, JMA, NASA FIRMS, GDACS, EONET, NWS) with ground motion prediction equations (GMPE) and infrastructure impact analysis to provide situational awareness for critical infrastructure operators.
+
+## Key Facts
+- URL: https://namazue.dev
+- Type: Web application (no install required)
+- Cost: Free for public use
+- Languages: Japanese, English, Korean
+- Data update frequency: Every 45 seconds to 10 minutes depending on source
+- Coverage: Global (originated as Japan-focused, now worldwide)
+
+## What Namazue Does
+- Displays real-time earthquakes from USGS and JMA on an interactive dark-themed map
+- Models seismic intensity using Si & Midorikawa 1999 GMPE (Ground Motion Prediction Equation)
+- Assesses infrastructure impact: ports, rail, hospitals, power plants within affected zones
+- Monitors wildfires via NASA FIRMS satellite hotspot data
+- Tracks global disaster alerts from GDACS (Global Disaster Alert and Coordination System)
+- Provides depth cross-section analysis for earthquake clusters
+- Visualizes active fault lines and historical earthquake catalogs (1900-present)
+- Supports 3D building visualization via Japan's PLATEAU 3D city models
+
+## Data Sources
+- USGS (United States Geological Survey) — Global earthquake catalog
+- JMA (Japan Meteorological Agency / 気象庁) — Japan regional seismic data
+- NASA FIRMS — Active fire/wildfire satellite detection
+- GDACS — Global multi-hazard disaster alerts
+- EONET (NASA Earth Observatory) — Natural event tracking
+- NWS (National Weather Service) — US weather alerts
+- GSI (Geospatial Information Authority of Japan) — Terrain and geodetic data
+- J-SHIS — Japan Seismic Hazard Information Station
+- PLATEAU — Japan 3D city model data
+
+## Target Users
+- Infrastructure operators (ports, rail, hospitals, power)
+- Emergency management and resilience teams
+- Seismologists and geoscience researchers
+- Media organizations seeking verified disaster data
+- General public interested in real-time natural hazard awareness
+
+## Technical Details
+- Built with vanilla TypeScript (no React/Vue frameworks)
+- Rendering: MapLibre GL JS + Deck.gl for high-performance spatial visualization
+- Backend: Cloudflare Workers + Hono + Neon Postgres (PostGIS)
+- GMPE Engine: Runs in Web Workers for non-blocking computation
+- Base map: Dark vector tiles optimized for data overlay readability
+
+## Contact & Links
+- Website: https://namazue.dev
+- API: https://api.namazue.dev
+- Source concept: Named after "Namazu-e" (鯰絵), Japanese earthquake catfish mythology prints
+
+## Detailed Information
+For comprehensive technical details, API documentation, and extended FAQ, see: https://namazue.dev/llms-full.txt

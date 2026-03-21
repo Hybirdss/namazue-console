@@ -1,0 +1,523 @@
+import { Hono } from 'hono';
+import type { Env } from '../index.ts';
+import { createDb } from '../lib/db.ts';
+import { earthquakes } from '@namazue/db';
+import { gte, lte, and, desc, sql } from 'drizzle-orm';
+import { checkRateLimit } from '../lib/rateLimit.ts';
+import {
+  EARTHQUAKE_LIMITS,
+  parseFiniteNumber,
+  parseString,
+  parseTimestamp,
+  validateEventTime,
+  validateMomentTensor,
+  validateRange,
+  validateRangePair,
+} from '../lib/earthquakeValidation.ts';
+import { buildGovernorPolicyEnvelopeFromEvents } from '../governor/runtimeGovernor.ts';
+import { verifyInternalAuth } from '../lib/internalAuth.ts';
+
+export const eventsRoute = new Hono<{ Bindings: Env }>();
+
+type FaultType = 'crustal' | 'interface' | 'intraslab';
+type EarthquakeInsert = typeof earthquakes.$inferInsert;
+
+const VALID_SOURCES = new Set(['usgs', 'jma', 'gcmt']);
+const VALID_FAULT_TYPES = new Set(['crustal', 'interface', 'intraslab']);
+const BULK_LIMIT = 500;
+const BULK_UPSERT_CONCURRENCY = 20;
+
+interface IngestEventInput {
+  id?: unknown;
+  lat?: unknown;
+  lng?: unknown;
+  depth_km?: unknown;
+  magnitude?: unknown;
+  time?: unknown;
+  source?: unknown;
+  mag_type?: unknown;
+  place?: unknown;
+  place_ja?: unknown;
+  fault_type?: unknown;
+  tsunami?: unknown;
+  mt_strike?: unknown;
+  mt_dip?: unknown;
+  mt_rake?: unknown;
+  mt_strike2?: unknown;
+  mt_dip2?: unknown;
+  mt_rake2?: unknown;
+}
+
+interface IngestBody {
+  event?: IngestEventInput;
+}
+
+interface BulkIngestBody {
+  events?: IngestEventInput[];
+}
+
+/**
+ * GET /api/events?mag_min=4&lat_min=24&lat_max=46&lng_min=122&lng_max=150&limit=100
+ * Returns earthquakes matching filters.
+ */
+// Edge cache TTL for event lists. Public, time-bounded data.
+const EVENTS_CACHE_TTL = 30; // seconds (CF edge)
+const KV_EVENTS_TTL = 300; // seconds (KV second-tier, 5 min)
+
+/**
+ * Normalize the request URL for cache keying:
+ * Sort query params so ?a=1&b=2 and ?b=2&a=1 share the same cache entry.
+ */
+function normalizeEventsCacheKey(req: Request): Request {
+  const url = new URL(req.url);
+  const sorted = new URLSearchParams(
+    [...url.searchParams.entries()].sort(([a], [b]) => a.localeCompare(b)),
+  );
+  url.search = sorted.toString();
+  return new Request(url.toString());
+}
+
+eventsRoute.get('/', async (c) => {
+  // Historical mode: when `until` param is present, skip R2 cache and
+  // go straight to DB. R2 only contains latest events snapshot.
+  const isHistorical = !!c.req.query('until');
+
+  // ── Serve from R2 (zero DB queries) ────────────────────────────────────
+  // Cron writes events snapshot to R2 every minute. Serve it directly
+  // from R2 binding — no DB query, no KV writes, minimal CPU.
+  // Old and new clients both benefit. R2 reads are free (Class B).
+  if (!isHistorical) {
+    const bucket = c.env.FEED_BUCKET;
+    if (bucket) {
+      try {
+        const obj = await bucket.get('feed/events.json');
+        if (obj) {
+          return new Response(obj.body, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'public, max-age=60',
+              'X-Source': 'r2',
+            },
+          });
+        }
+      } catch {
+        // R2 read failed, fall through to DB query
+      }
+    }
+  }
+
+  // ── Fallback: DB query (only if R2 is empty/unavailable) ───────────────
+  const cache = caches.default;
+  const cacheKey = normalizeEventsCacheKey(c.req.raw);
+
+  const cachedRes = await cache.match(cacheKey);
+  if (cachedRes) {
+    // ETag check: if client has the same version, return 304 (zero bandwidth).
+    const clientEtag = c.req.header('if-none-match');
+    const cachedEtag = cachedRes.headers.get('etag');
+    if (clientEtag && cachedEtag && clientEtag === cachedEtag) {
+      return new Response(null, { status: 304 });
+    }
+    return new Response(cachedRes.body, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': `public, max-age=${EVENTS_CACHE_TTL}`,
+        ...(cachedEtag ? { 'ETag': cachedEtag } : {}),
+        'X-Cache': 'HIT',
+      },
+    });
+  }
+
+  // ── KV second-tier cache (5 min) ─────────────────────────────────────
+  const kvKey = `ev:${new URL(c.req.url).search}`;
+  const kvCached = await c.env.RATE_LIMIT.get(kvKey);
+  if (kvCached) {
+    // Warm up CF edge cache from KV
+    c.executionCtx.waitUntil(
+      cache.put(cacheKey, new Response(kvCached, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': `public, max-age=${EVENTS_CACHE_TTL}`,
+        },
+      })),
+    );
+    return new Response(kvCached, {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'X-Cache': 'KV' },
+    });
+  }
+
+  // ── Rate limit (only hits on cache MISS) ─────────────────────────────
+  const ip = c.req.header('cf-connecting-ip') ?? '0.0.0.0';
+  const rl = await checkRateLimit(c.env.RATE_LIMIT, ip, 'events');
+  if (!rl.allowed) {
+    return c.json({ error: 'Rate limit exceeded' }, 429);
+  }
+
+  // ── Validate params ───────────────────────────────────────────────────
+  const mag_min = parseFiniteNumber(c.req.query('mag_min'));
+  if (mag_min !== null) {
+    const magErr = validateRange('mag_min', mag_min, EARTHQUAKE_LIMITS.magnitude.min, EARTHQUAKE_LIMITS.magnitude.max);
+    if (magErr) return c.json({ error: magErr }, 400);
+  }
+
+  const rawLimit = parseFiniteNumber(c.req.query('limit'));
+  const maxLimit = isHistorical ? 5000 : 1000;
+  const limit = rawLimit === null ? (isHistorical ? 500 : 100) : Math.floor(rawLimit);
+  if (!Number.isInteger(limit) || limit < 1 || limit > maxLimit) {
+    return c.json({ error: `limit must be an integer between 1 and ${maxLimit}` }, 400);
+  }
+
+  const lat_min = parseFiniteNumber(c.req.query('lat_min'));
+  const lat_max = parseFiniteNumber(c.req.query('lat_max'));
+  const latMinErr = lat_min === null ? null : validateRange('lat_min', lat_min, EARTHQUAKE_LIMITS.lat.min, EARTHQUAKE_LIMITS.lat.max);
+  const latMaxErr = lat_max === null ? null : validateRange('lat_max', lat_max, EARTHQUAKE_LIMITS.lat.min, EARTHQUAKE_LIMITS.lat.max);
+  const latPairErr = validateRangePair('lat_min', lat_min, 'lat_max', lat_max);
+  if (latMinErr || latMaxErr || latPairErr) {
+    return c.json({ error: latMinErr ?? latMaxErr ?? latPairErr }, 400);
+  }
+
+  const lng_min = parseFiniteNumber(c.req.query('lng_min'));
+  const lng_max = parseFiniteNumber(c.req.query('lng_max'));
+  const lngMinErr = lng_min === null ? null : validateRange('lng_min', lng_min, EARTHQUAKE_LIMITS.lng.min, EARTHQUAKE_LIMITS.lng.max);
+  const lngMaxErr = lng_max === null ? null : validateRange('lng_max', lng_max, EARTHQUAKE_LIMITS.lng.min, EARTHQUAKE_LIMITS.lng.max);
+  const lngPairErr = validateRangePair('lng_min', lng_min, 'lng_max', lng_max);
+  if (lngMinErr || lngMaxErr || lngPairErr) {
+    return c.json({ error: lngMinErr ?? lngMaxErr ?? lngPairErr }, 400);
+  }
+
+  // ── Time filter (since/until=ISO8601 or epoch ms) ──────────────────
+  const sinceRaw = c.req.query('since');
+  let sinceDate: Date | null = null;
+  if (sinceRaw) {
+    const ts = parseTimestamp(sinceRaw);
+    if (ts === null) {
+      return c.json({ error: 'since must be an ISO-8601 date string or epoch milliseconds' }, 400);
+    }
+    sinceDate = ts;
+  }
+
+  const untilRaw = c.req.query('until');
+  let untilDate: Date | null = null;
+  if (untilRaw) {
+    const ts = parseTimestamp(untilRaw);
+    if (ts === null) {
+      return c.json({ error: 'until must be an ISO-8601 date string or epoch milliseconds' }, 400);
+    }
+    untilDate = ts;
+  }
+
+  // Validate since < until
+  if (sinceDate && untilDate && sinceDate.getTime() >= untilDate.getTime()) {
+    return c.json({ error: 'since must be before until' }, 400);
+  }
+
+  // ── DB query ──────────────────────────────────────────────────────────
+  const conditions = [];
+  if (mag_min !== null && mag_min > 0) conditions.push(gte(earthquakes.magnitude, mag_min));
+  if (lat_min !== null) conditions.push(gte(earthquakes.lat, lat_min));
+  if (lat_max !== null) conditions.push(lte(earthquakes.lat, lat_max));
+  if (lng_min !== null) conditions.push(gte(earthquakes.lng, lng_min));
+  if (lng_max !== null) conditions.push(lte(earthquakes.lng, lng_max));
+  if (sinceDate !== null) conditions.push(gte(earthquakes.time, sinceDate));
+  if (untilDate !== null) conditions.push(lte(earthquakes.time, untilDate));
+
+  const db = createDb(c.env.DATABASE_URL);
+  const rows = await db.select({
+    id: earthquakes.id,
+    lat: earthquakes.lat,
+    lng: earthquakes.lng,
+    depth_km: earthquakes.depth_km,
+    magnitude: earthquakes.magnitude,
+    time: earthquakes.time,
+    place: earthquakes.place,
+    fault_type: earthquakes.fault_type,
+    source: earthquakes.source,
+    tsunami: earthquakes.tsunami,
+    mag_type: earthquakes.mag_type,
+    maxi: earthquakes.maxi,
+    mt_strike: earthquakes.mt_strike,
+    mt_dip: earthquakes.mt_dip,
+    mt_rake: earthquakes.mt_rake,
+  })
+    .from(earthquakes)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(earthquakes.time))
+    .limit(limit);
+
+  // ── Build response + ETag ─────────────────────────────────────────────
+  // ETag = latest event time + count (cheap surrogate for content hash).
+  // Clients that re-poll with If-None-Match get 304 if nothing changed.
+  const latestTime = rows[0]?.time instanceof Date
+    ? rows[0].time.getTime()
+    : (rows[0]?.time ?? 0);
+  const etag = `"${latestTime}-${rows.length}"`;
+  const governor = buildGovernorPolicyEnvelopeFromEvents(rows.map((row) => ({
+    ...row,
+    tsunami: Boolean(row.tsunami),
+  })), {
+    now: new Date().toISOString(),
+  });
+
+  const clientEtag = c.req.header('if-none-match');
+  if (clientEtag === etag) {
+    return new Response(null, { status: 304 });
+  }
+
+  const body = JSON.stringify({ events: rows, count: rows.length, governor });
+  const responseHeaders = {
+    'Content-Type': 'application/json',
+    'Cache-Control': `public, max-age=${EVENTS_CACHE_TTL}`,
+    'ETag': etag,
+  };
+
+  // Store in CF edge cache + KV second-tier cache.
+  c.executionCtx.waitUntil(Promise.all([
+    cache.put(cacheKey, new Response(body, { headers: responseHeaders })),
+    c.env.RATE_LIMIT.put(kvKey, body, { expirationTtl: KV_EVENTS_TTL }),
+  ]));
+
+  return new Response(body, { status: 200, headers: responseHeaders });
+});
+
+/**
+ * POST /api/events/ingest
+ * Body:
+ * {
+ *   event: { ...earthquake fields... },
+ *   generate_analysis?: boolean, // default true
+ *   wait_for_analysis?: boolean  // default false (background generation)
+ * }
+ */
+eventsRoute.post('/ingest', async (c) => {
+  const auth = verifyInternalAuth(c.env.INTERNAL_API_TOKEN, c.req.header('x-internal-token'));
+  if (!auth.ok) {
+    return c.json({ error: auth.error! }, auth.status!);
+  }
+
+  const body = await c.req.json<IngestBody>().catch(() => null);
+  if (!body?.event) {
+    return c.json({ error: 'event is required' }, 400);
+  }
+
+  const parsed = parseIngestEvent(body.event);
+  if ('error' in parsed) {
+    return c.json({ error: parsed.error }, 400);
+  }
+
+  const db = createDb(c.env.DATABASE_URL);
+  try {
+    await upsertEvent(db, parsed.value);
+  } catch (err) {
+    console.error(`[events] failed to upsert event ${parsed.value.id}:`, err);
+    return c.json({ error: 'Failed to store event' }, 500);
+  }
+
+  return c.json({
+    status: 'stored',
+    event_id: parsed.value.id,
+  });
+});
+
+/**
+ * POST /api/events/ingest/bulk
+ * Body:
+ * {
+ *   events: [{...}, ...],
+ *   generate_analysis?: boolean, // default true
+ *   wait_for_analysis?: boolean  // default false
+ * }
+ */
+eventsRoute.post('/ingest/bulk', async (c) => {
+  const auth = verifyInternalAuth(c.env.INTERNAL_API_TOKEN, c.req.header('x-internal-token'));
+  if (!auth.ok) {
+    return c.json({ error: auth.error! }, auth.status!);
+  }
+
+  const body = await c.req.json<BulkIngestBody>().catch(() => null);
+  if (!body?.events || !Array.isArray(body.events) || body.events.length === 0) {
+    return c.json({ error: 'events[] is required' }, 400);
+  }
+  if (body.events.length > BULK_LIMIT) {
+    return c.json({ error: `events[] too large (max ${BULK_LIMIT})` }, 400);
+  }
+
+  const db = createDb(c.env.DATABASE_URL);
+  const accepted: string[] = [];
+  const acceptedEvents: EarthquakeInsert[] = [];
+  const rejected: Array<{ index: number; error: string }> = [];
+
+  for (let i = 0; i < body.events.length; i++) {
+    const parsed = parseIngestEvent(body.events[i]);
+    if ('error' in parsed) {
+      rejected.push({ index: i, error: parsed.error });
+      continue;
+    }
+    accepted.push(parsed.value.id);
+    acceptedEvents.push(parsed.value);
+  }
+
+  try {
+    await upsertEvents(db, acceptedEvents);
+  } catch (err) {
+    console.error('[events] bulk upsert failed:', err);
+    return c.json({ error: 'Failed to store events' }, 500);
+  }
+
+  return c.json({
+    status: 'stored',
+    accepted: accepted.length,
+    rejected,
+  });
+});
+
+function parseIngestEvent(input: IngestEventInput): { value: EarthquakeInsert } | { error: string } {
+  const id = parseString(input.id);
+  if (!id) return { error: 'event.id is required' };
+  if (id.length > 128) return { error: 'event.id must be 128 chars or fewer' };
+
+  const lat = parseFiniteNumber(input.lat);
+  if (lat === null) return { error: `event.lat must be a finite number (id=${id})` };
+  const latErr = validateRange('event.lat', lat, EARTHQUAKE_LIMITS.lat.min, EARTHQUAKE_LIMITS.lat.max);
+  if (latErr) return { error: `${latErr} (id=${id})` };
+
+  const lng = parseFiniteNumber(input.lng);
+  if (lng === null) return { error: `event.lng must be a finite number (id=${id})` };
+  const lngErr = validateRange('event.lng', lng, EARTHQUAKE_LIMITS.lng.min, EARTHQUAKE_LIMITS.lng.max);
+  if (lngErr) return { error: `${lngErr} (id=${id})` };
+
+  const depth_km = parseFiniteNumber(input.depth_km);
+  if (depth_km === null) return { error: `event.depth_km must be a finite number (id=${id})` };
+  const depthErr = validateRange('event.depth_km', depth_km, EARTHQUAKE_LIMITS.depthKm.min, EARTHQUAKE_LIMITS.depthKm.max);
+  if (depthErr) return { error: `${depthErr} (id=${id})` };
+
+  const magnitude = parseFiniteNumber(input.magnitude);
+  if (magnitude === null) return { error: `event.magnitude must be a finite number (id=${id})` };
+  const magErr = validateRange('event.magnitude', magnitude, EARTHQUAKE_LIMITS.magnitude.min, EARTHQUAKE_LIMITS.magnitude.max);
+  if (magErr) return { error: `${magErr} (id=${id})` };
+
+  const time = parseTimestamp(input.time);
+  if (!time) return { error: `event.time must be a valid timestamp (id=${id})` };
+  const timeErr = validateEventTime(time);
+  if (timeErr) return { error: `${timeErr} (id=${id})` };
+
+  const source = (parseString(input.source)?.toLowerCase()) ?? 'usgs';
+  if (!VALID_SOURCES.has(source)) {
+    return { error: `event.source must be one of: usgs|jma|gcmt (id=${id})` };
+  }
+
+  const faultTypeRaw = parseString(input.fault_type)?.toLowerCase();
+  if (faultTypeRaw && !VALID_FAULT_TYPES.has(faultTypeRaw)) {
+    return { error: `event.fault_type must be one of: crustal|interface|intraslab (id=${id})` };
+  }
+  const fault_type = faultTypeRaw ? (faultTypeRaw as FaultType) : null;
+
+  const mtStrike = parseFiniteNumber(input.mt_strike);
+  const mtDip = parseFiniteNumber(input.mt_dip);
+  const mtRake = parseFiniteNumber(input.mt_rake);
+  const mtStrike2 = parseFiniteNumber(input.mt_strike2);
+  const mtDip2 = parseFiniteNumber(input.mt_dip2);
+  const mtRake2 = parseFiniteNumber(input.mt_rake2);
+
+  const mtPrimaryErr = validateMomentTensor(mtStrike, mtDip, mtRake, 'event.mt_nodal_plane_1');
+  if (mtPrimaryErr) return { error: `${mtPrimaryErr} (id=${id})` };
+
+  const mtSecondaryErr = validateMomentTensor(mtStrike2, mtDip2, mtRake2, 'event.mt_nodal_plane_2');
+  if (mtSecondaryErr) return { error: `${mtSecondaryErr} (id=${id})` };
+
+  const mag_type = parseString(input.mag_type);
+  if (mag_type && mag_type.length > 16) {
+    return { error: `event.mag_type must be 16 chars or fewer (id=${id})` };
+  }
+
+  const place = parseString(input.place);
+  if (place && place.length > 255) {
+    return { error: `event.place must be 255 chars or fewer (id=${id})` };
+  }
+
+  const place_ja = parseString(input.place_ja);
+  if (place_ja && place_ja.length > 255) {
+    return { error: `event.place_ja must be 255 chars or fewer (id=${id})` };
+  }
+
+  return {
+    value: {
+      id,
+      lat,
+      lng,
+      depth_km,
+      magnitude,
+      time,
+      source,
+      mag_type,
+      place,
+      place_ja,
+      fault_type,
+      tsunami: parseBoolean(input.tsunami),
+      mt_strike: mtStrike,
+      mt_dip: mtDip,
+      mt_rake: mtRake,
+      mt_strike2: mtStrike2,
+      mt_dip2: mtDip2,
+      mt_rake2: mtRake2,
+    },
+  };
+}
+
+async function upsertEvent(
+  db: ReturnType<typeof createDb>,
+  event: EarthquakeInsert,
+): Promise<void> {
+  const { id: _id, ...updateSet } = event;
+  await db.insert(earthquakes)
+    .values(event)
+    .onConflictDoUpdate({
+      target: earthquakes.id,
+      set: updateSet,
+    });
+}
+
+async function upsertEvents(
+  db: ReturnType<typeof createDb>,
+  events: EarthquakeInsert[],
+): Promise<void> {
+  if (events.length === 0) return;
+  // Batch upsert in chunks of 20. Each chunk is a single INSERT...ON CONFLICT
+  // statement instead of 20 separate queries, reducing DB round-trips ~20x.
+  for (let i = 0; i < events.length; i += BULK_UPSERT_CONCURRENCY) {
+    const chunk = events.slice(i, i + BULK_UPSERT_CONCURRENCY);
+    await db.insert(earthquakes)
+      .values(chunk)
+      .onConflictDoUpdate({
+        target: earthquakes.id,
+        set: {
+          lat: sql`excluded.lat`,
+          lng: sql`excluded.lng`,
+          depth_km: sql`excluded.depth_km`,
+          magnitude: sql`excluded.magnitude`,
+          time: sql`excluded.time`,
+          place: sql`excluded.place`,
+          place_ja: sql`excluded.place_ja`,
+          fault_type: sql`excluded.fault_type`,
+          source: sql`excluded.source`,
+          mag_type: sql`excluded.mag_type`,
+          tsunami: sql`excluded.tsunami`,
+          mt_strike: sql`excluded.mt_strike`,
+          mt_dip: sql`excluded.mt_dip`,
+          mt_rake: sql`excluded.mt_rake`,
+          mt_strike2: sql`excluded.mt_strike2`,
+          mt_dip2: sql`excluded.mt_dip2`,
+          mt_rake2: sql`excluded.mt_rake2`,
+        },
+      });
+  }
+}
+
+function parseBoolean(value: unknown): boolean {
+  if (typeof value === 'boolean') return value;
+  if (value === 1 || value === '1') return true;
+  if (typeof value === 'string' && value.trim().toLowerCase() === 'true') return true;
+  return false;
+}

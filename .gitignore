@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Environment
+*.local
+.env
+.dev.vars
+
+# Wrangler
+.wrangler/
+workers/tile-proxy/wrangler.toml
+apps/worker/wrangler.toml
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Data artifacts
+facts.json
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Security
+docs/current/SECURITY-CHECKLIST.md
+
+# OS
+.DS_Store

@@ -1,0 +1,65 @@
+.nz-check__trust {
+  margin-top: 6px;
+  font-size: 10px;
+  font-family: var(--nz-font-mono);
+  letter-spacing: 0.04em;
+  color: var(--nz-text-secondary);
+}
+
+.nz-intel__matrix {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.nz-intel__matrix-header {
+  font-family: var(--nz-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--nz-text-muted);
+  margin-bottom: 8px;
+}
+
+.nz-intel__matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.nz-intel__matrix-card {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 6px;
+  padding: 8px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.nz-intel__matrix-card--critical {
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.nz-intel__matrix-card--priority {
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
+.nz-intel__matrix-card--watch {
+  border-color: rgba(96, 165, 250, 0.45);
+}
+
+.nz-intel__matrix-label {
+  font-size: 10px;
+  color: var(--nz-text-secondary);
+  margin-bottom: 2px;
+}
+
+.nz-intel__matrix-value {
+  font-family: var(--nz-font-mono);
+  font-size: 14px;
+  color: var(--nz-text-primary);
+}
+
+.nz-intel__matrix-detail {
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--nz-text-muted);
+}

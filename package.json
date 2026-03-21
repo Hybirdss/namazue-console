@@ -1,0 +1,53 @@
+{
+	"name": "namazue-console",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Japan-wide earthquake intelligence console for infrastructure operators",
+	"type": "module",
+	"homepage": "https://namazue.dev",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Hybirdss/namazue-console"
+	},
+	"license": "MIT",
+	"author": "Yunsu Choi",
+	"keywords": [
+		"earthquake",
+		"japan",
+		"seismology",
+		"gmpe",
+		"maplibre",
+		"deckgl",
+		"infrastructure",
+		"spatial",
+		"cloudflare-workers",
+		"operations-console"
+	],
+	"engines": {
+		"node": ">=20.19.0"
+	},
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"dev": "npm run dev -w @namazue/globe",
+		"build": "npm run build -w @namazue/globe",
+		"typecheck": "npm run typecheck -ws --if-present",
+		"test": "npm run test -ws --if-present",
+		"check": "npm run typecheck && npm run test",
+		"audit:high": "npm audit --audit-level=high",
+		"release:verify": "npm run check && npm run build && npm run audit:high",
+		"dev:worker": "npm run dev -w @namazue/worker",
+		"build:data": "npx tsx tools/build-slab2-contours.ts && npx tsx tools/build-historical-catalog.ts"
+	},
+	"devDependencies": {
+		"dotenv": "^17.3.1",
+		"tsx": "^4.19.0",
+		"typescript": "~5.9.3"
+	},
+	"dependencies": {
+		"@google/genai": "^1.43.0",
+		"pg": "^8.19.0"
+	}
+}

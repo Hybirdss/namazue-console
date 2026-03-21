@@ -1,0 +1,254 @@
+/**
+ * Impact Visualization — Selected event overlay layers.
+ *
+ * Three visual elements that make earthquake analysis feel like intelligence:
+ *
+ *   1. Glow Ring — Large, pulsing ice-blue circle behind the selected
+ *      earthquake dot. Makes the selection impossible to miss.
+ *
+ *   2. Impact Zone — Dashed circle at the earthquake's estimated impact
+ *      radius. Shows the spatial extent of potential damage.
+ *
+ *   3. Connection Arcs — Severity-colored lines from epicenter to each
+ *      affected infrastructure asset. The "web of impact" that makes
+ *      the analysis visible. THIS is what makes it Palantir-grade.
+ */
+
+import { ScatterplotLayer, ArcLayer } from '@deck.gl/layers';
+import type { Layer } from '@deck.gl/core';
+import type { EarthquakeEvent } from '../types';
+import type { OpsAssetExposure, OpsSeverity } from '../ops/types';
+import { OPS_ASSETS } from '../ops/assetCatalog';
+import { impactRadiusKm } from './impactZone';
+
+type RGBA = [number, number, number, number];
+
+// ── Magnitude-proportional glow sizing ────────────────────────
+// Same cube-root-of-energy curve as earthquake dots (§1 of VISUALIZATION-STANDARDS.md).
+// Glow rings scale with the dot: inner ~1.6×, outer ~2.5× the dot radius.
+const MAG_REF = 3;
+const MAG_BASE_PX = 3;
+
+function glowRadius(mag: number, scale: number, min: number, max: number): number {
+  const dotR = MAG_BASE_PX * Math.pow(10, 0.25 * (mag - MAG_REF));
+  return Math.max(min, Math.min(max, dotR * scale));
+}
+
+// ── Severity Arc Colors ───────────────────────────────────────
+
+const ARC_COLORS: Record<OpsSeverity, RGBA> = {
+  critical: [239, 68, 68, 180],
+  priority: [251, 191, 36, 140],
+  watch: [96, 165, 250, 100],
+  clear: [148, 163, 184, 40],
+};
+
+// ── Glow Ring Data ────────────────────────────────────────────
+
+interface GlowDatum {
+  position: [number, number];
+  radius: number;
+  color: RGBA;
+}
+
+const glowPool: GlowDatum[] = [
+  { position: [0, 0], radius: 0, color: [0, 0, 0, 0] },
+  { position: [0, 0], radius: 0, color: [0, 0, 0, 0] },
+];
+
+// ── Impact Zone Data ──────────────────────────────────────────
+
+interface ZoneDatum {
+  position: [number, number];
+  radiusMeters: number;
+  color: RGBA;
+}
+
+const zonePool: ZoneDatum[] = [
+  { position: [0, 0], radiusMeters: 0, color: [0, 0, 0, 0] },
+];
+
+// ── Connection Arc Data ───────────────────────────────────────
+
+interface ArcDatum {
+  sourcePosition: [number, number];
+  targetPosition: [number, number];
+  sourceColor: RGBA;
+  targetColor: RGBA;
+}
+
+function buildEventGeometryTrigger(event: EarthquakeEvent): [string, number, number] {
+  return [event.id, event.lng, event.lat];
+}
+
+function buildImpactRadiusTrigger(
+  event: EarthquakeEvent,
+): [string, number, number, EarthquakeEvent['faultType']] {
+  return [event.id, event.magnitude, event.depth_km, event.faultType];
+}
+
+export function createImpactGlowLayer(
+  event: EarthquakeEvent,
+  now: number,
+): Layer {
+  const pos: [number, number] = [event.lng, event.lat];
+  const geometryTrigger = buildEventGeometryTrigger(event);
+  const pulse = Math.sin(now * 0.003) * 0.5 + 0.5; // 0..1, ~2s cycle
+
+  const innerBase = glowRadius(event.magnitude, 1.6, 8, 40);
+  const innerRadius = innerBase * (1 + pulse * 0.12);
+  const innerAlpha = Math.round(60 + pulse * 30);
+  glowPool[0].position = pos;
+  glowPool[0].radius = innerRadius;
+  glowPool[0].color = [125, 211, 252, innerAlpha];
+
+  const outerBase = glowRadius(event.magnitude, 2.5, 14, 55);
+  const outerRadius = outerBase * (1 + pulse * 0.12);
+  const outerAlpha = Math.round(20 + pulse * 15);
+  glowPool[1].position = pos;
+  glowPool[1].radius = outerRadius;
+  glowPool[1].color = [125, 211, 252, outerAlpha];
+
+  return new ScatterplotLayer<GlowDatum>({
+    id: 'impact-glow',
+    data: glowPool,
+    pickable: false,
+    stroked: false,
+    filled: true,
+    radiusUnits: 'pixels',
+    getPosition: (d) => d.position,
+    getRadius: (d) => d.radius,
+    getFillColor: (d) => d.color,
+    updateTriggers: {
+      getPosition: geometryTrigger,
+      getRadius: [event.id, event.magnitude],
+      getFillColor: [event.id, now],
+    },
+  });
+}
+
+export function createImpactZoneLayers(
+  event: EarthquakeEvent,
+  exposures: OpsAssetExposure[],
+): Layer[] {
+  const layers: Layer[] = [];
+  const pos: [number, number] = [event.lng, event.lat];
+  const geometryTrigger = buildEventGeometryTrigger(event);
+  const impactTrigger = buildImpactRadiusTrigger(event);
+
+  // ── Impact Zone — Dashed boundary circle ───────────────────
+  const impactKm = impactRadiusKm(event.magnitude, event.depth_km, event.faultType);
+  const impactMeters = impactKm * 1000;
+
+  // Zone severity: based on magnitude
+  let zoneColor: RGBA;
+  if (event.magnitude >= 7.0) zoneColor = [239, 68, 68, 50];
+  else if (event.magnitude >= 5.5) zoneColor = [251, 191, 36, 40];
+  else zoneColor = [96, 165, 250, 30];
+
+  zonePool[0].position = pos;
+  zonePool[0].radiusMeters = impactMeters;
+  zonePool[0].color = zoneColor;
+
+  // Filled zone (very faint background tint)
+  layers.push(new ScatterplotLayer<ZoneDatum>({
+    id: 'impact-zone-fill',
+    data: zonePool,
+    pickable: false,
+    stroked: false,
+    filled: true,
+    radiusUnits: 'meters',
+    getPosition: (d) => d.position,
+    getRadius: (d) => d.radiusMeters,
+    getFillColor: (d) => d.color,
+    updateTriggers: {
+      getPosition: geometryTrigger,
+      getRadius: impactTrigger,
+      getFillColor: [event.id],
+    },
+  }));
+
+  // Zone boundary ring (stroked)
+  layers.push(new ScatterplotLayer<ZoneDatum>({
+    id: 'impact-zone-ring',
+    data: zonePool,
+    pickable: false,
+    stroked: true,
+    filled: false,
+    radiusUnits: 'meters',
+    lineWidthUnits: 'pixels',
+    getPosition: (d) => d.position,
+    getRadius: (d) => d.radiusMeters,
+    getLineColor: (d) => [d.color[0], d.color[1], d.color[2], d.color[3] * 2] as RGBA,
+    getLineWidth: 1.5,
+    updateTriggers: {
+      getPosition: geometryTrigger,
+      getRadius: impactTrigger,
+      getLineColor: [event.id],
+    },
+  }));
+
+  // ── 3. Connection Arcs — Epicenter to affected infrastructure ──
+  // Only show arcs for non-clear exposures
+  const affectedExposures = exposures.filter((e) => e.severity !== 'clear');
+
+  if (affectedExposures.length > 0) {
+    const assetMap = new Map(OPS_ASSETS.map((a) => [a.id, a]));
+
+    const arcData: ArcDatum[] = [];
+    for (const expo of affectedExposures) {
+      const asset = assetMap.get(expo.assetId);
+      if (!asset) continue;
+
+      const sevColor = ARC_COLORS[expo.severity];
+      // Source color slightly dimmer than target (visual direction: epicenter -> asset)
+      const srcColor: RGBA = [sevColor[0], sevColor[1], sevColor[2], Math.round(sevColor[3] * 0.5)];
+
+      arcData.push({
+        sourcePosition: pos,
+        targetPosition: [asset.lng, asset.lat],
+        sourceColor: srcColor,
+        targetColor: sevColor,
+      });
+    }
+
+    if (arcData.length > 0) {
+      layers.push(new ArcLayer<ArcDatum>({
+        id: 'impact-arcs',
+        data: arcData,
+        pickable: false,
+        getSourcePosition: (d) => d.sourcePosition,
+        getTargetPosition: (d) => d.targetPosition,
+        getSourceColor: (d) => d.sourceColor,
+        getTargetColor: (d) => d.targetColor,
+        getWidth: 1.5,
+        greatCircle: true,
+        updateTriggers: {
+          getSourcePosition: geometryTrigger,
+          getSourceColor: [event.id],
+          getTargetColor: [exposures],
+        },
+      }));
+    }
+  }
+
+  return layers;
+}
+
+/**
+ * Create all impact visualization layers for the selected event.
+ *
+ * @param event - Selected earthquake
+ * @param exposures - Current asset exposures
+ * @param now - Current timestamp (for pulse animation)
+ */
+export function createImpactVisualizationLayers(
+  event: EarthquakeEvent,
+  exposures: OpsAssetExposure[],
+  now: number,
+): Layer[] {
+  return [
+    createImpactGlowLayer(event, now),
+    ...createImpactZoneLayers(event, exposures),
+  ];
+}

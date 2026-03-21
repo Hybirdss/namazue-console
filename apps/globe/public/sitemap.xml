@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Main console (Japanese primary, English/Korean alternates) -->
+  <url>
+    <loc>https://namazue.dev/</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://namazue.dev/?lang=ja" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://namazue.dev/?lang=en" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://namazue.dev/?lang=ko" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://namazue.dev/" />
+    <changefreq>always</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

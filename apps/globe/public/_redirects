@@ -1,0 +1,17 @@
+# Dynamic sitemap redirect (Google follows 301 for sitemaps)
+/sitemap-events.xml https://api.namazue.dev/sitemap.xml 301
+
+# Google News sitemap (last 48 hours of significant events)
+/sitemap-news.xml https://api.namazue.dev/sitemap-news.xml 301
+
+# RSS/Atom feeds (earthquake event feed for aggregators)
+/feed.xml https://api.namazue.dev/feed.xml 301
+/feed.atom https://api.namazue.dev/feed.atom 301
+/rss https://api.namazue.dev/feed.xml 301
+/rss.xml https://api.namazue.dev/feed.xml 301
+
+# IndexNow instant indexing (Bing/Yandex push notification)
+/indexnow https://api.namazue.dev/indexnow 200
+
+# SPA catch-all (must be last)
+/* /index.html 200

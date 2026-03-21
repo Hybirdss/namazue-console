@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Namazue — 地震インテリジェンスコンソール | Earthquake Intelligence Console</title>
+    <meta name="description" content="リアルタイム地震監視とインフラ被害インテリジェンス。USGS/JMA地震データ、GMPE震度モデリング、オペレーター向け状況認識コンソール。Real-time earthquake monitoring and infrastructure impact intelligence for Japan." />
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://namazue.dev/" />
+
+    <!-- Language alternates -->
+    <link rel="alternate" hreflang="ja" href="https://namazue.dev/?lang=ja" />
+    <link rel="alternate" hreflang="en" href="https://namazue.dev/?lang=en" />
+    <link rel="alternate" hreflang="ko" href="https://namazue.dev/?lang=ko" />
+    <link rel="alternate" hreflang="x-default" href="https://namazue.dev/" />
+
+    <!-- RSS/Atom Feed Discovery -->
+    <link rel="alternate" type="application/rss+xml" title="Namazue — Earthquake Feed" href="https://namazue.dev/feed.xml" />
+    <link rel="alternate" type="application/atom+xml" title="Namazue — Earthquake Feed (Atom)" href="https://namazue.dev/feed.atom" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Namazue — 地震インテリジェンスコンソール" />
+    <meta property="og:description" content="リアルタイム地震監視とインフラ影響インテリジェンス。USGS/JMAデータ、GMPE震度モデリング、オペレーター向け状況認識。Real-time earthquake intelligence with live seismic data and infrastructure impact analysis." />
+    <meta property="og:image" content="https://namazue.dev/namazue-hero.jpg" />
+    <meta property="og:image:secure_url" content="https://namazue.dev/namazue-hero.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content="Namazue earthquake intelligence console showing Japan seismic activity map with real-time monitoring" />
+    <meta property="og:url" content="https://namazue.dev" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Namazue" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale:alternate" content="ko_KR" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Namazue — Earthquake Intelligence Console" />
+    <meta name="twitter:description" content="Real-time earthquake monitoring and infrastructure impact intelligence. Live USGS/JMA data, GMPE intensity modeling, and operator-grade situational awareness." />
+    <meta name="twitter:image" content="https://namazue.dev/namazue-hero.jpg" />
+    <meta name="twitter:image:alt" content="Namazue earthquake intelligence console showing Japan seismic activity" />
+
+    <!-- Theme & Icons -->
+    <meta name="theme-color" content="#0c1017" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Search Engine Verification -->
+    <meta name="google-site-verification" content="SXCUhGHXgEwuAzja9RZ95joZczBtDIoK295R-FxcvFE" />
+    <!-- Bing: verify at bing.com/webmasters then uncomment -->
+    <!-- <meta name="msvalidate.01" content="BING_VERIFICATION_CODE" /> -->
+    <!-- Yandex: verify at webmaster.yandex.com then uncomment -->
+    <!-- <meta name="yandex-verification" content="YANDEX_VERIFICATION_CODE" /> -->
+
+    <!-- SEO Meta -->
+    <meta name="author" content="Namazue" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="application-name" content="Namazue" />
+    <meta name="apple-mobile-web-app-title" content="Namazue" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="HandheldFriendly" content="true" />
+    <meta name="MobileOptimized" content="width" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Geo targeting — Japan primary market -->
+    <meta name="geo.region" content="JP" />
+    <meta name="geo.placename" content="Japan" />
+    <meta name="ICBM" content="36.5, 137.0" />
+    <meta name="DC.coverage" content="Japan" />
+
+    <!-- Structured Data: Organization + WebApplication + Dataset + FAQ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://namazue.dev/#org",
+          "name": "Namazue",
+          "url": "https://namazue.dev",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://namazue.dev/icon-512.png",
+            "width": 512,
+            "height": 512
+          },
+          "description": "Global multi-hazard spatial intelligence platform providing real-time earthquake monitoring, wildfire tracking, and infrastructure impact analysis",
+          "sameAs": []
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://namazue.dev/#app",
+          "name": "Namazue",
+          "alternateName": ["鯰絵", "나마즈에", "Namazue Earthquake Console", "鯰絵地震コンソール"],
+          "url": "https://namazue.dev",
+          "description": "Free, real-time global multi-hazard intelligence console. Monitors earthquakes, wildfires, storms, and volcanic activity worldwide with GMPE intensity modeling and infrastructure impact assessment. Used by infrastructure operators, emergency managers, and researchers.",
+          "applicationCategory": "UtilitiesApplication",
+          "applicationSubCategory": "Disaster Monitoring",
+          "operatingSystem": "Web Browser",
+          "browserRequirements": "Modern browser with WebGL support (Chrome, Firefox, Safari, Edge)",
+          "availableLanguage": [
+            { "@type": "Language", "name": "Japanese", "alternateName": "ja" },
+            { "@type": "Language", "name": "English", "alternateName": "en" },
+            { "@type": "Language", "name": "Korean", "alternateName": "ko" }
+          ],
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "description": "Free public access to real-time multi-hazard monitoring"
+          },
+          "creator": { "@id": "https://namazue.dev/#org" },
+          "image": "https://namazue.dev/namazue-hero.jpg",
+          "screenshot": "https://namazue.dev/namazue-hero.jpg",
+          "featureList": [
+            "Real-time USGS and JMA earthquake data (45-second update cycle)",
+            "GMPE ground motion intensity modeling (Si & Midorikawa 1999)",
+            "Infrastructure impact assessment (ports, rail, hospitals, power plants)",
+            "NASA FIRMS wildfire satellite hotspot tracking (9,000+ active fires)",
+            "GDACS global disaster alerts (earthquakes, floods, cyclones, volcanoes)",
+            "Active fault visualization (766 mapped faults)",
+            "Depth cross-section analysis for seismic clusters",
+            "Historical earthquake catalog (57,000+ events, 1900-present)",
+            "3D building visualization via Japan PLATEAU data",
+            "Multi-language interface (Japanese, English, Korean)",
+            "Operator-grade command palette and priority panels"
+          ],
+          "keywords": "earthquake monitoring, 地震監視, 지진 모니터링, seismic intelligence, infrastructure impact, GMPE, JMA, USGS, real-time earthquake map, 地震 リアルタイム, 지진 실시간, disaster intelligence, wildfire tracking, multi-hazard monitoring, earthquake intensity, 震度, natural disaster map, global earthquake tracker",
+          "datePublished": "2025-11-01",
+          "dateModified": "2026-03-11",
+          "softwareVersion": "2.0"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://namazue.dev/#website",
+          "name": "Namazue",
+          "alternateName": "鯰絵",
+          "url": "https://namazue.dev",
+          "publisher": { "@id": "https://namazue.dev/#org" },
+          "inLanguage": ["ja", "en", "ko"],
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://namazue.dev/?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://namazue.dev/#dataset",
+          "name": "Namazue Global Earthquake & Hazard Database",
+          "description": "Aggregated global earthquake catalog combining USGS and JMA seismic data with multi-hazard events from NASA FIRMS, GDACS, and EONET. Contains 57,000+ earthquake records from 1900 to present, 766 active fault mappings, real-time wildfire hotspots, and global disaster alerts.",
+          "url": "https://namazue.dev",
+          "license": "https://creativecommons.org/licenses/by/4.0/",
+          "creator": { "@id": "https://namazue.dev/#org" },
+          "temporalCoverage": "1900/..",
+          "spatialCoverage": {
+            "@type": "Place",
+            "name": "Global",
+            "geo": {
+              "@type": "GeoShape",
+              "box": "-90 -180 90 180"
+            }
+          },
+          "variableMeasured": [
+            { "@type": "PropertyValue", "name": "Earthquake Magnitude", "unitCode": "Mw" },
+            { "@type": "PropertyValue", "name": "Focal Depth", "unitCode": "km" },
+            { "@type": "PropertyValue", "name": "Seismic Intensity", "unitCode": "JMA Scale" },
+            { "@type": "PropertyValue", "name": "Fire Radiative Power", "unitCode": "MW" }
+          ],
+          "distribution": {
+            "@type": "DataDownload",
+            "encodingFormat": "application/json",
+            "contentUrl": "https://api.namazue.dev/api/events/recent"
+          },
+          "isBasedOn": [
+            { "@type": "Dataset", "name": "USGS Earthquake Catalog", "url": "https://earthquake.usgs.gov" },
+            { "@type": "Dataset", "name": "JMA Seismic Data", "url": "https://www.jma.go.jp" },
+            { "@type": "Dataset", "name": "NASA FIRMS", "url": "https://firms.modaps.eosdis.nasa.gov" },
+            { "@type": "Dataset", "name": "GDACS", "url": "https://www.gdacs.org" }
+          ]
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://namazue.dev/"
+            }
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is Namazue?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Namazue is a free, real-time global multi-hazard intelligence console available at namazue.dev. It monitors earthquakes, wildfires, storms, volcanic activity, and other natural hazards worldwide. It combines data from USGS, JMA, NASA FIRMS, and GDACS with GMPE intensity modeling and infrastructure impact assessment to provide operator-grade situational awareness."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Namazue（鯰絵）とは何ですか？",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Namazue（鯰絵）は、世界規模のリアルタイムマルチハザードインテリジェンスコンソールです。USGS/JMAの地震データ、NASA FIRMSの山火事データ、GDACSの災害アラートを統合し、GMPE震度モデリングとインフラ被害評価を提供します。無料で利用でき、インフラ事業者から一般の方まで幅広くご利用いただけます。"
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Namazue(나마즈에)란 무엇인가요?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Namazue(나마즈에)는 namazue.dev에서 무료로 이용할 수 있는 실시간 글로벌 다중 재해 인텔리전스 콘솔입니다. USGS/JMA 지진 데이터, NASA FIRMS 산불 데이터, GDACS 재해 알림을 통합하여 GMPE 진도 모델링과 인프라 피해 평가를 제공합니다."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What data sources does Namazue use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Namazue integrates data from: USGS (global earthquakes), JMA (Japan regional seismicity), NASA FIRMS (satellite wildfire detection), GDACS (global disaster alerts), EONET (NASA natural events), NWS (US weather alerts), OpenAQ (air quality), GSI (Japan geodetic data), J-SHIS (seismic hazard maps), and PLATEAU (3D city models). All sources are authoritative government or scientific agencies."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is Namazue free to use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, Namazue's public intelligence console is completely free with no registration required. It provides real-time earthquake monitoring, wildfire tracking, multi-hazard alerts, GMPE intensity modeling, and infrastructure impact analysis at no cost."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How is Namazue different from the USGS earthquake map?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "USGS provides raw earthquake data. Namazue adds four key capabilities: (1) GMPE intensity modeling that estimates actual ground shaking at specific locations, (2) infrastructure impact assessment identifying at-risk ports, rail, hospitals, and power plants, (3) multi-hazard integration combining earthquakes with wildfires, storms, and volcanic activity, and (4) an operator-grade interface designed for rapid situational assessment and decision-making."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What is GMPE and how does Namazue use it?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "GMPE (Ground Motion Prediction Equation) estimates seismic ground shaking at any location based on earthquake magnitude, depth, distance, fault type, and soil conditions. Namazue uses the Si & Midorikawa (1999) model — the standard for Japan — to compute JMA seismic intensity values. The model runs in Web Workers and is validated to within +/-1.0 JMA intensity of historical measurements."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How often is earthquake data updated on Namazue?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "USGS earthquake data updates every 45 seconds. JMA data updates at similar intervals. NASA FIRMS wildfire data updates every 5 minutes. GDACS disaster alerts update every 10 minutes. Events appear on the console within seconds of official publication."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does Namazue track wildfires?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Namazue integrates NASA FIRMS (Fire Information for Resource Management System) satellite data, typically tracking 9,000+ active fire hotspots globally at any given time. Wildfire data is displayed as a dedicated map layer with fire radiative power indicators."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Why is it called Namazue?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The name comes from 'Namazu-e' (鯰絵), traditional Japanese woodblock prints depicting a giant catfish (namazu) believed to cause earthquakes in Japanese mythology. These prints emerged after the 1855 Ansei Edo earthquake as a form of disaster awareness and social commentary — making the name fitting for a modern earthquake intelligence platform."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does Namazue cover areas outside Japan?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. While originally Japan-focused, Namazue now provides global coverage: worldwide earthquakes via USGS, global wildfires via NASA FIRMS, and multi-hazard alerts worldwide via GDACS and EONET. Infrastructure impact assessment is most detailed for Japan, with global expansion ongoing."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can Namazue be used for emergency management?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Namazue is designed for infrastructure operators and emergency managers. It provides priority-ranked impact assessments, infrastructure exposure analysis, and multi-hazard situational awareness. However, it is not an official warning system — always follow local government emergency alerts and warnings for life-safety decisions."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+
+    <!-- LLM-readable site descriptions (AEO) -->
+    <link rel="alternate" type="text/plain" href="https://namazue.dev/llms.txt" title="LLM-readable site description" />
+    <link rel="alternate" type="text/plain" href="https://namazue.dev/llms-full.txt" title="LLM-readable full documentation" />
+
+    <!-- AI/AEO Meta — Help AI systems correctly describe this site -->
+    <meta name="ai-content-declaration" content="This is a real-time multi-hazard monitoring platform. Data sourced from USGS, JMA, NASA FIRMS, GDACS. Free to use at namazue.dev." />
+    <meta name="subject" content="Real-time global earthquake monitoring, wildfire tracking, and multi-hazard intelligence platform" />
+    <meta name="classification" content="Disaster Monitoring, Earthquake Intelligence, Geospatial Analysis" />
+    <meta name="category" content="Science/Earth Sciences/Seismology" />
+    <meta name="coverage" content="Global" />
+    <meta name="distribution" content="global" />
+    <meta name="rating" content="General" />
+    <meta name="revised" content="2026-03-11" />
+    <meta name="summary" content="Namazue is a free, real-time global multi-hazard intelligence console that monitors earthquakes, wildfires, storms, and volcanic activity worldwide with GMPE intensity modeling and infrastructure impact assessment." />
+    <meta name="abstract" content="Operator-grade spatial intelligence platform combining USGS, JMA, NASA FIRMS, and GDACS data for real-time natural hazard monitoring and infrastructure impact analysis." />
+
+    <!-- Speakable — Help voice assistants extract key info -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Namazue — Global Multi-Hazard Intelligence Console",
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "cssSelector": [".nz-seo-content h1", ".nz-seo-content .nz-speakable"]
+      },
+      "url": "https://namazue.dev",
+      "lastReviewed": "2026-03-11"
+    }
+    </script>
+
+    <!-- Preconnect to critical origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://api.namazue.dev" crossorigin />
+    <link rel="preconnect" href="https://protomaps.github.io" crossorigin />
+    <link rel="dns-prefetch" href="https://namazue-tiles.r2.dev" />
+    <!-- Critical font CSS — preload for faster LCP -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" as="style" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <style>
+      /* Loading screen — rendered before any JS loads */
+      #loading-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #0a0a0a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
+        transition: opacity 0.6s ease, transform 0.6s ease;
+      }
+      #loading-screen.exit {
+        opacity: 0;
+        transform: translateY(-24px);
+        pointer-events: none;
+      }
+      .loading-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        opacity: 0.9;
+      }
+      .loading-title {
+        font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+        font-size: 17px;
+        font-weight: 700;
+        color: #f0f0f0;
+        letter-spacing: -0.02em;
+        margin-top: 4px;
+      }
+      .loading-status {
+        font-family: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.32);
+        letter-spacing: 0.02em;
+        min-height: 16px;
+        transition: opacity 0.2s ease;
+      }
+      .loading-bar-track {
+        width: 120px;
+        height: 2px;
+        background: #1a1f2e;
+        border-radius: 1px;
+        overflow: hidden;
+        margin-top: 4px;
+      }
+      .loading-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: #60a5fa;
+        border-radius: 1px;
+        transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      /* Noscript fallback — visible to crawlers, hidden when JS loads */
+      .nz-seo-content {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        color: #e2e8f0;
+        font-family: 'Inter', system-ui, sans-serif;
+        line-height: 1.6;
+      }
+      .nz-seo-content h1 { font-size: 24px; margin-bottom: 16px; }
+      .nz-seo-content h2 { font-size: 18px; margin: 24px 0 12px; color: #94a3b8; }
+      .nz-seo-content p { margin: 8px 0; color: #94a3b8; }
+      .nz-seo-content ul { margin: 8px 0; padding-left: 20px; color: #94a3b8; }
+    </style>
+  </head>
+  <body>
+    <div id="loading-screen">
+      <img class="loading-icon" src="/favicon.png" alt="Namazue" width="56" height="56" />
+      <div class="loading-title">鯰 Namazue</div>
+      <div class="loading-status" id="loading-status">Initializing…</div>
+      <div class="loading-bar-track">
+        <div class="loading-bar-fill" id="loading-bar"></div>
+      </div>
+    </div>
+    <div id="app"></div>
+
+    <!-- SEO + AEO fallback — visible to crawlers and AI systems, hidden when JS loads -->
+    <noscript>
+      <div class="nz-seo-content" itemscope itemtype="https://schema.org/WebApplication">
+        <h1 itemprop="name">Namazue — Global Multi-Hazard Intelligence Console</h1>
+        <p class="nz-speakable" itemprop="description">Namazue is a free, real-time global multi-hazard intelligence console available at <a href="https://namazue.dev" itemprop="url">namazue.dev</a>. It monitors earthquakes, wildfires, storms, volcanic activity, and other natural hazards worldwide, combining data from USGS, JMA, NASA FIRMS, and GDACS with GMPE seismic intensity modeling and infrastructure impact assessment.</p>
+
+        <h2>What Namazue Does</h2>
+        <p>Namazue provides operator-grade situational awareness by aggregating authoritative data from government and scientific agencies into a single spatial intelligence console. Unlike simple earthquake notification apps, Namazue models actual ground shaking intensity using the Si & Midorikawa 1999 Ground Motion Prediction Equation (GMPE), assesses which infrastructure assets (ports, rail, hospitals, power plants) are at risk, and integrates multiple hazard types including wildfires and storms for comprehensive disaster intelligence.</p>
+
+        <h2>Key Features</h2>
+        <ul>
+          <li><strong>Real-time earthquake monitoring</strong> — Live USGS (global) and JMA (Japan) seismic data with 45-second update cycles. Database contains 57,000+ earthquake records from 1900 to present.</li>
+          <li><strong>GMPE intensity modeling</strong> — Si & Midorikawa 1999 model computes estimated JMA seismic intensity at any location, accounting for magnitude, depth, distance, fault type, and soil conditions (Vs30). Validated to +/-1.0 JMA of historical actuals.</li>
+          <li><strong>Infrastructure impact assessment</strong> — Identifies and priority-ranks at-risk ports, rail stations, hospitals, airports, and power plants within modeled intensity zones.</li>
+          <li><strong>NASA FIRMS wildfire tracking</strong> — Satellite-detected active fire hotspots globally, tracking 9,000+ active fires.</li>
+          <li><strong>GDACS multi-hazard alerts</strong> — Global disaster alerts covering earthquakes, floods, tropical cyclones, and volcanic eruptions.</li>
+          <li><strong>Active fault visualization</strong> — 766 mapped fault lines across Japan with geological metadata.</li>
+          <li><strong>Depth cross-section analysis</strong> — Vertical cross-sections through earthquake clusters for subduction zone geometry analysis.</li>
+          <li><strong>3D city models</strong> — Japan PLATEAU 3D building data for urban impact visualization.</li>
+          <li><strong>Historical earthquake catalog</strong> — Searchable archive spanning 1900 to present.</li>
+          <li><strong>Command palette</strong> — Keyboard-driven operator interface for rapid navigation.</li>
+        </ul>
+
+        <h2>Data Sources</h2>
+        <p>All data comes from authoritative government and scientific agencies:</p>
+        <ul>
+          <li><strong>USGS</strong> (United States Geological Survey) — Global earthquake catalog, updated every 45 seconds</li>
+          <li><strong>JMA</strong> (Japan Meteorological Agency / 気象庁) — Japan regional seismic data and tsunami warnings</li>
+          <li><strong>NASA FIRMS</strong> (Fire Information for Resource Management System) — Global satellite wildfire detection</li>
+          <li><strong>GDACS</strong> (Global Disaster Alert and Coordination System) — Multi-hazard global alerts</li>
+          <li><strong>EONET</strong> (NASA Earth Observatory Natural Event Tracker) — Natural event tracking</li>
+          <li><strong>NWS</strong> (National Weather Service) — US severe weather alerts</li>
+          <li><strong>GSI</strong> (Geospatial Information Authority of Japan) — Terrain and geodetic data</li>
+          <li><strong>J-SHIS</strong> — Japan Seismic Hazard Information Station</li>
+          <li><strong>PLATEAU</strong> — Japan 3D city model data from MLIT</li>
+        </ul>
+
+        <h2>Who Uses Namazue</h2>
+        <p>Infrastructure operators (port authorities, rail operators, hospital systems, power companies), emergency management teams, seismologists and geoscience researchers, media organizations seeking verified disaster data, and the general public interested in real-time natural hazard awareness.</p>
+
+        <h2>How Namazue Compares</h2>
+        <p>Unlike the USGS earthquake map which shows raw epicenter data, Namazue adds GMPE-modeled intensity fields, infrastructure impact assessment, multi-hazard integration, and an operator-grade interface. Unlike consumer earthquake apps focused on push notifications, Namazue provides spatial analysis tools for professional decision-making in critical infrastructure management.</p>
+
+        <h2>Technical Details</h2>
+        <p>Built with vanilla TypeScript (no React/Vue), MapLibre GL JS and Deck.gl for high-performance spatial rendering, Cloudflare Workers with Hono for the backend API, and Neon Postgres with PostGIS for geospatial queries. GMPE computation runs in Web Workers for non-blocking performance.</p>
+
+        <h2>About the Name</h2>
+        <p>"Namazue" (鯰絵) comes from traditional Japanese woodblock prints depicting a giant catfish (namazu) that was believed to cause earthquakes. These prints emerged after the 1855 Ansei Edo earthquake as disaster awareness art.</p>
+
+        <h2>Pricing</h2>
+        <p itemprop="offers" itemscope itemtype="https://schema.org/Offer"><meta itemprop="price" content="0" /><meta itemprop="priceCurrency" content="USD" /><strong>Completely free</strong>. No registration, no paywall.</p>
+
+        <h2>Languages</h2>
+        <p>Japanese (日本語), English, Korean (한국어). Switch: <a href="https://namazue.dev/?lang=ja">?lang=ja</a> / <a href="https://namazue.dev/?lang=en">?lang=en</a> / <a href="https://namazue.dev/?lang=ko">?lang=ko</a></p>
+
+        <hr />
+        <h2>日本語 — Namazue（鯰絵）について</h2>
+        <p>Namazue（鯰絵）は、世界規模のリアルタイムマルチハザードインテリジェンスコンソールです。USGS・JMAの地震データ、NASA FIRMSの山火事データ、GDACSの災害アラートを統合し、GMPE震度モデリングとインフラ被害評価を提供します。港湾、鉄道、病院、発電所などの重要インフラのリスク評価を行い、オペレーター向けの状況認識ツールとして無料でご利用いただけます。</p>
+
+        <h2>한국어 — Namazue(나마즈에) 소개</h2>
+        <p>Namazue(나마즈에)는 namazue.dev에서 무료로 이용할 수 있는 실시간 글로벌 다중 재해 인텔리전스 콘솔입니다. USGS/JMA 지진 데이터, NASA FIRMS 산불 데이터, GDACS 재해 알림을 통합하여 GMPE 진도 모델링과 인프라 피해 평가를 제공합니다.</p>
+
+        <h2>Frequently Asked Questions</h2>
+        <dl>
+          <dt>What is Namazue?</dt>
+          <dd>A free, real-time global multi-hazard intelligence console monitoring earthquakes, wildfires, storms, and volcanic activity with GMPE intensity modeling and infrastructure impact assessment.</dd>
+          <dt>Is Namazue free?</dt>
+          <dd>Yes, completely free with no registration required.</dd>
+          <dt>How often is data updated?</dt>
+          <dd>USGS earthquakes every 45 seconds, NASA FIRMS wildfires every 5 minutes, GDACS alerts every 10 minutes.</dd>
+          <dt>What makes Namazue different from USGS?</dt>
+          <dd>USGS shows raw data. Namazue adds GMPE intensity modeling, infrastructure impact assessment, multi-hazard integration, and an operator-grade interface.</dd>
+          <dt>What is GMPE?</dt>
+          <dd>Ground Motion Prediction Equation — estimates actual ground shaking at specific locations based on earthquake parameters and soil conditions.</dd>
+          <dt>Does Namazue provide tsunami warnings?</dt>
+          <dd>Displays tsunami status from official sources, but is not an official warning system. Always follow local government alerts.</dd>
+          <dt>What browsers are supported?</dt>
+          <dd>Any modern browser with WebGL: Chrome, Firefox, Safari, Edge.</dd>
+        </dl>
+      </div>
+    </noscript>
+
+    <script type="module" src="/src/entry.ts"></script>
+  </body>
+</html>

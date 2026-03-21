@@ -1,0 +1,110 @@
+# Namazue — Global Multi-Hazard Intelligence Console
+# https://namazue.dev
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /lab
+
+# AI Crawlers — Explicitly welcome
+# These crawlers power AI assistants and search features.
+# We want Namazue to be accurately represented in AI answers.
+
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+
+User-agent: Google-Extended
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /lab
+
+User-agent: anthropic-ai
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+
+User-agent: Bytespider
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+
+User-agent: YouBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+
+User-agent: Applebot-Extended
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+
+User-agent: cohere-ai
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+
+User-agent: Meta-ExternalAgent
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+
+# Search engine crawl rates
+# Googlebot: no crawl-delay (Google ignores it; configure in Search Console)
+# Bingbot/Yandex: moderate pace to be gentle with SPA
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /lab
+Crawl-delay: 1
+
+User-agent: Yandex
+Allow: /
+Disallow: /api/
+Disallow: /lab
+Crawl-delay: 2
+
+# Sitemaps (static + dynamic earthquake events + Google News)
+Sitemap: https://namazue.dev/sitemap.xml
+Sitemap: https://namazue.dev/sitemap-events.xml
+Sitemap: https://namazue.dev/sitemap-news.xml
+
+# LLM-readable site descriptions
+# See https://llmstxt.org for the llms.txt standard
+# llms.txt: https://namazue.dev/llms.txt
+# llms-full.txt: https://namazue.dev/llms-full.txt
+
+# Host directive (Yandex)
+Host: https://namazue.dev

@@ -1,0 +1,145 @@
+import { Hono } from 'hono';
+import type { Env } from '../index.ts';
+import { JR_OPERATORS, LINE_ID_MAP } from '../reference/railCatalog.ts';
+
+export const railRoute = new Hono<{ Bindings: Env }>();
+
+// --- Types ---
+
+export interface RailLineStatus {
+  lineId: string;
+  status: 'normal' | 'delayed' | 'suspended' | 'partial' | 'unknown';
+  cause?: string;
+  statusText?: string;
+  updatedAt: number;
+}
+
+// --- Mappings ---
+
+/** ODPT railway operator+line → our internal lineId */
+const ODPT_URL =
+  'https://api-public.odpt.org/api/v4/odpt:TrainInformation.json';
+
+// --- Status text normalization ---
+
+function normalizeStatus(
+  text: string | undefined,
+): RailLineStatus['status'] {
+  if (!text) return 'unknown';
+  const t = text.trim();
+  if (t === '平常運転' || t === '平常') return 'normal';
+  if (t === '遅延') return 'delayed';
+  if (t === '運転見合わせ' || t === '運休') return 'suspended';
+  if (t === '一部運休' || t === '一部運転見合わせ') return 'partial';
+  return 'unknown';
+}
+
+/**
+ * Extract the operator+line suffix from an ODPT railway ID.
+ * e.g. "odpt.Railway:JR-East.TohokuShinkansen" → "JR-East.TohokuShinkansen"
+ */
+function extractLineKey(odptRailway: string): string | undefined {
+  const prefix = 'odpt.Railway:';
+  if (odptRailway.startsWith(prefix)) {
+    return odptRailway.slice(prefix.length);
+  }
+  return undefined;
+}
+
+// --- ODPT fetch + normalize ---
+
+interface OdptTrainInfo {
+  'odpt:operator': string;
+  'odpt:railway'?: string;
+  'odpt:trainInformationStatus'?: { ja?: string };
+  'odpt:trainInformationText'?: { ja?: string };
+  'odpt:trainInformationCause'?: { ja?: string };
+  'dc:date'?: string;
+}
+
+function isJrOperator(operator: string): boolean {
+  return JR_OPERATORS.some((prefix) => operator === prefix);
+}
+
+function parseOdptResponse(data: OdptTrainInfo[]): RailLineStatus[] {
+  const lines: RailLineStatus[] = [];
+
+  for (const item of data) {
+    if (!isJrOperator(item['odpt:operator'])) continue;
+
+    const railway = item['odpt:railway'];
+    if (!railway) continue;
+
+    const lineKey = extractLineKey(railway);
+    if (!lineKey || !(lineKey in LINE_ID_MAP)) continue;
+
+    const statusText =
+      item['odpt:trainInformationStatus']?.ja ??
+      item['odpt:trainInformationText']?.ja;
+
+    const cause = item['odpt:trainInformationCause']?.ja;
+    const updatedAt = item['dc:date']
+      ? new Date(item['dc:date']).getTime()
+      : Date.now();
+
+    const entry: RailLineStatus = {
+      lineId: LINE_ID_MAP[lineKey],
+      status: normalizeStatus(statusText),
+      updatedAt,
+    };
+
+    if (statusText) entry.statusText = statusText;
+    if (cause) entry.cause = cause;
+
+    lines.push(entry);
+  }
+
+  return lines;
+}
+
+export async function fetchFromOdpt(): Promise<RailLineStatus[]> {
+  const res = await fetch(ODPT_URL, {
+    headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(8_000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`ODPT responded ${res.status}`);
+  }
+
+  const data: OdptTrainInfo[] = await res.json();
+  return parseOdptResponse(data);
+}
+
+// --- Route ---
+
+railRoute.get('/', async (c) => {
+  // Serve from R2 feed first (zero ODPT fetches, zero KV writes)
+  const bucket = c.env.FEED_BUCKET;
+  if (bucket) {
+    try {
+      const obj = await bucket.get('feed/rail.json');
+      if (obj) {
+        return new Response(obj.body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=60',
+            'X-Source': 'r2',
+          },
+        });
+      }
+    } catch {
+      // R2 read failed, fall through
+    }
+  }
+
+  // Fallback: fetch ODPT directly
+  try {
+    const lines = await fetchFromOdpt();
+    return c.json({ lines, source: 'odpt', updatedAt: Date.now() });
+  } catch (err) {
+    console.error('[rail] ODPT fetch failed:', err);
+    return c.json({ lines: [], source: 'fallback', updatedAt: Date.now() });
+  }
+});
