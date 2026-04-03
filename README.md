@@ -17,7 +17,7 @@
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
   <a href="https://maplibre.org/"><img src="https://img.shields.io/badge/MapLibre_GL-5.x-396CB2" alt="MapLibre" /></a>
   <a href="https://deck.gl/"><img src="https://img.shields.io/badge/deck.gl-9.x-F06292" alt="deck.gl" /></a>
-  <a href="https://github.com/sacridini/Awesome-Geospatial"><img src="https://img.shields.io/badge/Awesome-Geospatial-listed-fc60a8?style=flat&logo=awesome-lists&logoColor=white" alt="Awesome Geospatial" /></a>
+  <a href="https://github.com/sacridini/Awesome-Geospatial"><img src="https://img.shields.io/badge/Awesome-Geospatial-listed-fc60a8?style=flat" alt="Awesome Geospatial" /></a>
 </p>
 
 ---
